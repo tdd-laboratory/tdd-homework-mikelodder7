@@ -1,16 +1,27 @@
 import re
 
-_whole_word = lambda x: re.compile(r'(?<=\W)' + x + '(?=\W)')
+_whole_word = lambda x: re.compile(r'(^|\b)' + x + r'(\b|$)')
 _mixed_ordinal_pat = _whole_word(r'-?\d+(st|th|nd|rd)')
-_integer_pat = _whole_word(r'\d+')
+_integer_pat = _whole_word(r'(\d{1,3})(,\d{3}|\d)*')
 _floating_point_after_pat = re.compile(r'\.\d+[^a-zA-Z.]')
 _floating_point_before_pat = re.compile(r'(?<=\d\.)')
+_date_iso_8601_pat = _whole_word(r'(\d{4})-(0\d|1[0-2])-(0[1-9]|[12]\d|3[01])([ T]\d{2}:\d{2}(:\d{2}(.\d{3}( (\w|\w{3}|[-+]\d{4})?)?)?)?)?')
+_date_named = _whole_word(r'(0\d|[12]\d|3[01]) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec),? (\d{4})')
 
 def mixed_ordinals(text):
     '''Find tokens that begin with a number, and then have an ending like 1st or 2nd.'''
     for match in _mixed_ordinal_pat.finditer(text):
         yield('ordinal', match)
 
+def dates_iso8601(text):
+    '''Find tokens that begin with a year, and then have a month and day'''
+    for match in _date_iso_8601_pat.finditer(text):
+        yield('date', match)
+
+def dates_named(text):
+    for match in _date_named.finditer(text):
+        yield('date', match)
+    
 def integers(text):
     '''Find integers in text. Don't count floating point numbers.'''
     for match in _integer_pat.finditer(text):
